@@ -38,7 +38,7 @@ Ce mode est repris sur celui fait par [Leomelki et Shytoos](https://github.com/l
 **Minecraft 1.15.1 est requis.**  
 Pour installer le plug-in, merci de suivre les étapes suivantes:
   - Téléchargez Spigot 1.15.1 et lancez une fois le serveur
-  - Dans le dossier `plugins`, insérez [ProtocolLib](https://www.spigotmc.org/resources/protocollib.1997/) et [LoupGarou.jar](https://github.com/leomelki/LoupGarou/releases)
+  - Dans le dossier `plugins`, insérez [ProtocolLib](https://www.spigotmc.org/resources/protocollib.1997/) et [LoupGarou.jar](https://github.com/moiney/LoupGarouEnUneNuit/releases)
   - Redémarrez votre serveur puis donnez vous les permissions administrateur (/op <votre_pseudo> dans la console)
   - Allez sur la map et ajoutez les points de spawn sur chaque dalle `/lg addSpawn`
   - Allez sur la map et ajoutez les points de spawn sur chaque dalle `/lg addCenter` (il faut exactement 3 rôles au centre)
