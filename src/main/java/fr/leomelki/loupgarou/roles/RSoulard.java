@@ -3,10 +3,8 @@ package fr.leomelki.loupgarou.roles;
 import fr.leomelki.loupgarou.classes.LGGame;
 import fr.leomelki.loupgarou.classes.LGPlayer;
 
-public class RVoyante extends Role {
-
-
-    public RVoyante(LGGame game) {
+public class RSoulard extends Role {
+    public RSoulard(LGGame game) {
         super(game);
     }
 
@@ -22,32 +20,32 @@ public class RVoyante extends Role {
 
     @Override
     public String getName() {
-        return "§d§lVoyante";
+        return "§2§lSoulard";
     }
 
     @Override
     public String getFriendlyName() {
-        return "de la " + getName();
+        return "du " + getName();
     }
 
     @Override
     public String getShortDescription() {
-        return "Tu regardes un autre rôle.";
+        return "Tu échanges avec le centre.";
     }
 
     @Override
     public String getDescription() {
-        return "Tu regardes le rôle d'un autre joueur ou bien celui d'une carte du centre.";
+        return "Tu échanges ton rôle avec l'un de ceux du centre. Ton camp pourrait potentiellement changer.";
     }
 
     @Override
     public String getTask() {
-        return "Choisis un joueur ou bien une carte au centre, et découvre son rôle.";
+        return "Choisis une carte du centre, et échange son rôle avec le tien.";
     }
 
     @Override
     public String getBroadcastedTask() {
-        return "La voyante peut découvrir le rôle d'un autre joueur ou d'une carte au centre.";
+        return "Le soulard échange son rôle avec l'un du centre.";
     }
 
     @Override
@@ -59,17 +57,16 @@ public class RVoyante extends Role {
     protected void onNightTurn(LGPlayer player, Runnable callback) {
         player.showView();
         player.choose((choosenPlayer, choosenCenterCard) -> {
-            if (choosenPlayer != null && choosenPlayer != player) {
-                player.sendActionBarMessage("§e§l" + choosenPlayer.getName() + "§6 est §e§l" + choosenPlayer.getCurrentRole().getName());
-                player.sendMessage("§6Tu découvres que §7§l" + choosenPlayer.getName() + "§6 est " + choosenPlayer.getCurrentRole().getName());
-            } else if (choosenCenterCard != null) {
-                player.sendActionBarMessage("Cette carte du centre est " + choosenCenterCard.getRole().getName());
-                player.sendMessage("Cette carte du centre est " + choosenCenterCard.getRole().getName());
-            } else {
+            if (choosenCenterCard == null) {
                 return;
             }
+            player.sendActionBarMessage("Tu as pris une carte du centre.");
+            player.sendMessage("Tu as pris une carte du centre.");
             player.stopChoosing();
             player.hideView();
+            Role roleToGive = player.getCurrentRole();
+            player.setCurrentRole(choosenCenterCard.getRole());
+            choosenCenterCard.setRole(roleToGive);
         });
     }
 
@@ -84,5 +81,4 @@ public class RVoyante extends Role {
         player.stopChoosing();
         player.hideView();
     }
-
 }

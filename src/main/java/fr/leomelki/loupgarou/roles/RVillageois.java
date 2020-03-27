@@ -34,12 +34,19 @@ public class RVillageois extends Role{
 	public String getTask() {
 		return "";
 	}
+
 	@Override
 	public String getBroadcastedTask() {
 		return "";
 	}
+
 	@Override
 	public int getTimeout() {
 		return -1;
+	}
+
+	@Override
+	public RoleWinType getRoleWinOnDeath() {
+		return RoleWinType.VILLAGE;
 	}
 }

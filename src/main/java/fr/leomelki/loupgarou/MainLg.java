@@ -1,18 +1,26 @@
 package fr.leomelki.loupgarou;
 
 
-import java.io.File;
-import java.lang.reflect.Constructor;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.Sound;
+import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.ProtocolLibrary;
+import com.comphenix.protocol.ProtocolManager;
+import com.comphenix.protocol.events.ListenerPriority;
+import com.comphenix.protocol.events.PacketAdapter;
+import com.comphenix.protocol.events.PacketEvent;
+import com.comphenix.protocol.wrappers.EnumWrappers.ItemSlot;
+import com.comphenix.protocol.wrappers.PlayerInfoData;
+import com.comphenix.protocol.wrappers.WrappedChatComponent;
+import fr.leomelki.com.comphenix.packetwrapper.*;
+import fr.leomelki.loupgarou.classes.LGGame;
+import fr.leomelki.loupgarou.classes.LGPlayer;
+import fr.leomelki.loupgarou.classes.LGWinType;
+import fr.leomelki.loupgarou.events.LGSkinLoadEvent;
+import fr.leomelki.loupgarou.events.LGUpdatePrefixEvent;
+import fr.leomelki.loupgarou.listeners.*;
+import fr.leomelki.loupgarou.roles.*;
+import lombok.Getter;
+import lombok.Setter;
+import org.bukkit.*;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -25,61 +33,12 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.ProtocolLibrary;
-import com.comphenix.protocol.ProtocolManager;
-import com.comphenix.protocol.events.ListenerPriority;
-import com.comphenix.protocol.events.PacketAdapter;
-import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.wrappers.EnumWrappers.ItemSlot;
-import com.comphenix.protocol.wrappers.PlayerInfoData;
-import com.comphenix.protocol.wrappers.WrappedChatComponent;
-
-import fr.leomelki.com.comphenix.packetwrapper.WrapperPlayServerEntityEquipment;
-import fr.leomelki.com.comphenix.packetwrapper.WrapperPlayServerNamedSoundEffect;
-import fr.leomelki.com.comphenix.packetwrapper.WrapperPlayServerPlayerInfo;
-import fr.leomelki.com.comphenix.packetwrapper.WrapperPlayServerScoreboardTeam;
-import fr.leomelki.com.comphenix.packetwrapper.WrapperPlayServerUpdateHealth;
-import fr.leomelki.com.comphenix.packetwrapper.WrapperPlayServerUpdateTime;
-import fr.leomelki.loupgarou.classes.LGGame;
-import fr.leomelki.loupgarou.classes.LGPlayer;
-import fr.leomelki.loupgarou.classes.LGWinType;
-import fr.leomelki.loupgarou.events.LGSkinLoadEvent;
-import fr.leomelki.loupgarou.events.LGUpdatePrefixEvent;
-import fr.leomelki.loupgarou.listeners.CancelListener;
-import fr.leomelki.loupgarou.listeners.ChatListener;
-import fr.leomelki.loupgarou.listeners.JoinListener;
-import fr.leomelki.loupgarou.listeners.LoupGarouListener;
-import fr.leomelki.loupgarou.listeners.VoteListener;
-import fr.leomelki.loupgarou.roles.RAnge;
-import fr.leomelki.loupgarou.roles.RAssassin;
-import fr.leomelki.loupgarou.roles.RBouffon;
-import fr.leomelki.loupgarou.roles.RChaperonRouge;
-import fr.leomelki.loupgarou.roles.RChasseur;
-import fr.leomelki.loupgarou.roles.RChienLoup;
-import fr.leomelki.loupgarou.roles.RCorbeau;
-import fr.leomelki.loupgarou.roles.RCupidon;
-import fr.leomelki.loupgarou.roles.RDetective;
-import fr.leomelki.loupgarou.roles.RDictateur;
-import fr.leomelki.loupgarou.roles.REnfantSauvage;
-import fr.leomelki.loupgarou.roles.RFaucheur;
-import fr.leomelki.loupgarou.roles.RGarde;
-import fr.leomelki.loupgarou.roles.RGrandMechantLoup;
-import fr.leomelki.loupgarou.roles.RLoupGarou;
-import fr.leomelki.loupgarou.roles.RLoupGarouBlanc;
-import fr.leomelki.loupgarou.roles.RLoupGarouNoir;
-import fr.leomelki.loupgarou.roles.RMedium;
-import fr.leomelki.loupgarou.roles.RPetiteFille;
-import fr.leomelki.loupgarou.roles.RPirate;
-import fr.leomelki.loupgarou.roles.RPretre;
-import fr.leomelki.loupgarou.roles.RPyromane;
-import fr.leomelki.loupgarou.roles.RSorciere;
-import fr.leomelki.loupgarou.roles.RSurvivant;
-import fr.leomelki.loupgarou.roles.RVillageois;
-import fr.leomelki.loupgarou.roles.RVoyante;
-import fr.leomelki.loupgarou.roles.Role;
-import lombok.Getter;
-import lombok.Setter;
+import java.io.File;
+import java.lang.reflect.Constructor;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 
 public class MainLg extends JavaPlugin{
 	private static MainLg instance;
@@ -95,8 +54,9 @@ public class MainLg extends JavaPlugin{
 		if(!new File(getDataFolder(), "config.yml").exists()) {//Créer la config
 			FileConfiguration config = getConfig();
 			config.set("spawns", new ArrayList<List<Double>>());
-			for(String role : roles.keySet())//Nombre de participant pour chaque rôle
-				config.set("role."+role, 1);
+			config.set("centers", new ArrayList<List<Double>>());
+			for (String role : roles.keySet())//Nombre de participant pour chaque rôle
+				config.set("role." + role, 1);
 			saveConfig();
 		}
 		loadConfig();
@@ -215,32 +175,41 @@ public class MainLg extends JavaPlugin{
 				return true;
 			}
 			if(args.length >= 1) {
-				if(args[0].equalsIgnoreCase("addspawn")) {
-					Player player = (Player)sender;
+				if (args[0].equalsIgnoreCase("addspawn")) {
+					Player player = (Player) sender;
 					Location loc = player.getLocation();
 					List<Object> list = (List<Object>) getConfig().getList("spawns");
-					list.add(Arrays.asList((double)loc.getBlockX(), loc.getY(), (double)loc.getBlockZ(), (double)loc.getYaw(), (double)loc.getPitch()));
+					list.add(Arrays.asList((double) loc.getBlockX(), loc.getY(), (double) loc.getBlockZ(), (double) loc.getYaw(), (double) loc.getPitch()));
 					saveConfig();
 					loadConfig();
-					sender.sendMessage(prefix+"§aLa position a bien été ajoutée !");
+					sender.sendMessage(prefix + "§aLa position a bien été ajoutée !");
 					return true;
-				}else if(args[0].equalsIgnoreCase("end")) {
-					if(args.length != 2) {
+				} else if (args[0].equalsIgnoreCase("addcenter")) {
+					Player player = (Player) sender;
+					Location loc = player.getLocation();
+					List<Object> list = (List<Object>) getConfig().getList("centers");
+					list.add(Arrays.asList((double) loc.getBlockX(), loc.getY(), (double) loc.getBlockZ(), (double) loc.getYaw(), (double) loc.getPitch()));
+					saveConfig();
+					loadConfig();
+					sender.sendMessage(prefix + "§aLa position a bien été ajoutée !");
+					return true;
+				} else if (args[0].equalsIgnoreCase("end")) {
+					if (args.length != 2) {
 						sender.sendMessage("§4Utilisation : §c/lg end <pseudo>");
 						return true;
 					}
 					Player selected = Bukkit.getPlayer(args[1]);
-					if(selected == null) {
-						sender.sendMessage("§4Erreur : §cLe joueur §4"+args[1]+"§c n'est pas connecté.");
+					if (selected == null) {
+						sender.sendMessage("§4Erreur : §cLe joueur §4" + args[1] + "§c n'est pas connecté.");
 						return true;
 					}
 					LGGame game = LGPlayer.thePlayer(selected).getGame();
-					if(game == null) {
-						sender.sendMessage("§4Erreur : §cLe joueur §4"+selected.getName()+"§c n'est pas dans une partie.");
+					if (game == null) {
+						sender.sendMessage("§4Erreur : §cLe joueur §4" + selected.getName() + "§c n'est pas dans une partie.");
 						return true;
 					}
 					game.cancelWait();
-					game.endGame(LGWinType.EQUAL);
+					game.endGame(LGWinType.VILLAGEOIS);
 					game.broadcastMessage("§cLa partie a été arrêtée de force !");
 					return true;
 				}else if(args[0].equalsIgnoreCase("start")) {
@@ -249,18 +218,28 @@ public class MainLg extends JavaPlugin{
 						return true;
 					}
 					Player player = Bukkit.getPlayer(args[1]);
-					if(player == null) {
-						sender.sendMessage("§4Erreur : §cLe joueur §4"+args[1]+"§c n'existe pas !");
+					if (player == null) {
+						sender.sendMessage("§4Erreur : §cLe joueur §4" + args[1] + "§c n'existe pas !");
 						return true;
 					}
 					LGPlayer lgp = LGPlayer.thePlayer(player);
-					if(lgp.getGame() == null) {
-						sender.sendMessage("§4Erreur : §cLe joueur §4"+lgp.getName()+"§c n'est pas dans une partie.");
+					if (lgp.getGame() == null) {
+						sender.sendMessage("§4Erreur : §cLe joueur §4" + lgp.getName() + "§c n'est pas dans une partie.");
 						return true;
 					}
-					if(MainLg.getInstance().getConfig().getList("spawns").size() < lgp.getGame().getMaxPlayers()) {
+					if (lgp.getGame().getMaxPlayers() <= 0) {
+						sender.sendMessage("§4Erreur : §cIl n'y a pas assez de points de rôles ! Il faut autant de rôles que de joueurs + 3");
+						sender.sendMessage("§8§oPour les définir, merci de faire §7/lg roles set");
+						return true;
+					}
+					if (MainLg.getInstance().getConfig().getList("spawns").size() < lgp.getGame().getMaxPlayers()) {
 						sender.sendMessage("§4Erreur : §cIl n'y a pas assez de points de spawn !");
 						sender.sendMessage("§8§oPour les définir, merci de faire §7/lg addSpawn");
+						return true;
+					}
+					if (MainLg.getInstance().getConfig().getList("centers").size() != 3) {
+						sender.sendMessage("§4Erreur : §cIl n'y a pas 3 centres !");
+						sender.sendMessage("§8§oPour les définir, merci de faire §7/lg addCenter");
 						return true;
 					}
 					sender.sendMessage("§aVous avez bien démarré une nouvelle partie !");
@@ -325,7 +304,7 @@ public class MainLg extends JavaPlugin{
 								}catch(Exception err) {sender.sendMessage(prefix+"§4Erreur: §cCeci n'est pas un nombre");}
 							else
 								role = args[2];
-							
+
 							if(role != null) {
 								String real_role = null;
 								for(String real : getRoles().keySet())
@@ -333,7 +312,7 @@ public class MainLg extends JavaPlugin{
 										real_role = real;
 										break;
 									}
-								
+
 								if(real_role != null) {
 									try {
 										MainLg.getInstance().getConfig().set("role."+real_role, Integer.valueOf(args[3]));
@@ -348,7 +327,7 @@ public class MainLg extends JavaPlugin{
 								}
 							}
 							sender.sendMessage(prefix+"§4Erreur: §cLe rôle que vous avez entré est incorrect");
-							
+
 						} else {
 							sender.sendMessage(prefix+"§4Erreur: §cCommande incorrecte.");
 							sender.sendMessage(prefix+"§4Essayez §c/lg roles set <role_id/role_name> <nombre>§4 ou §c/lg roles list");
@@ -376,8 +355,8 @@ public class MainLg extends JavaPlugin{
 					return getStartingList(args[2], getRoles().keySet().toArray(new String[getRoles().size()]));
 				else if(args.length == 4)
 					return Arrays.asList("0", "1", "2", "3", "4", "5", "6", "7", "8", "9");
-		}else if(args.length == 1)
-			return getStartingList(args[0], "addSpawn", "end", "start", "nextNight", "nextDay", "reloadConfig", "roles", "joinAll", "reloadPacks");
+		}else if (args.length == 1)
+			return getStartingList(args[0], "addSpawn", "addCenter", "end", "start", "nextNight", "nextDay", "reloadConfig", "roles", "joinAll", "reloadPacks");
 		return new ArrayList<String>(0);
 	}
 	private List<String> getStartingList(String startsWith, String... list){
@@ -392,9 +371,9 @@ public class MainLg extends JavaPlugin{
 	}
 	public void loadConfig() {
 		int players = 0;
-		for(String role : roles.keySet())
-			players += getConfig().getInt("role."+role);
-		currentGame = new LGGame(players);
+		for (String role : roles.keySet())
+			players += getConfig().getInt("role." + role);
+		currentGame = new LGGame(players - 3);
 	}
 	@Override
 	public void onDisable() {
@@ -406,31 +385,16 @@ public class MainLg extends JavaPlugin{
 	private void loadRoles() {
 		try {
 			roles.put("LoupGarou", RLoupGarou.class.getConstructor(LGGame.class));
-			roles.put("LoupGarouNoir", RLoupGarouNoir.class.getConstructor(LGGame.class));
-			roles.put("Garde", RGarde.class.getConstructor(LGGame.class));
-			roles.put("Sorciere", RSorciere.class.getConstructor(LGGame.class));
-			roles.put("Voyante", RVoyante.class.getConstructor(LGGame.class));
-			roles.put("Chasseur", RChasseur.class.getConstructor(LGGame.class));
 			roles.put("Villageois", RVillageois.class.getConstructor(LGGame.class));
-			roles.put("Medium", RMedium.class.getConstructor(LGGame.class));
-			roles.put("Dictateur", RDictateur.class.getConstructor(LGGame.class));
-			roles.put("Cupidon", RCupidon.class.getConstructor(LGGame.class));
-			roles.put("PetiteFille", RPetiteFille.class.getConstructor(LGGame.class));
-			roles.put("ChaperonRouge", RChaperonRouge.class.getConstructor(LGGame.class));
-			roles.put("LoupGarouBlanc", RLoupGarouBlanc.class.getConstructor(LGGame.class));
-			roles.put("Bouffon", RBouffon.class.getConstructor(LGGame.class));
-			roles.put("Ange", RAnge.class.getConstructor(LGGame.class));
-			roles.put("Survivant", RSurvivant.class.getConstructor(LGGame.class));
-			roles.put("Assassin", RAssassin.class.getConstructor(LGGame.class));
-			roles.put("GrandMechantLoup", RGrandMechantLoup.class.getConstructor(LGGame.class));
-			roles.put("Corbeau", RCorbeau.class.getConstructor(LGGame.class));
-			roles.put("Detective", RDetective.class.getConstructor(LGGame.class));
-			roles.put("ChienLoup", RChienLoup.class.getConstructor(LGGame.class));
-			roles.put("Pirate", RPirate.class.getConstructor(LGGame.class));
-			roles.put("Pyromane", RPyromane.class.getConstructor(LGGame.class));
-			roles.put("Pretre", RPretre.class.getConstructor(LGGame.class));
-			roles.put("Faucheur", RFaucheur.class.getConstructor(LGGame.class));
-			roles.put("EnfantSauvage", REnfantSauvage.class.getConstructor(LGGame.class));
+			roles.put("Voleur", RVoleur.class.getConstructor(LGGame.class));
+			roles.put("Soulard", RSoulard.class.getConstructor(LGGame.class));
+			roles.put("Insomniaque", RInsomniaque.class.getConstructor(LGGame.class));
+			roles.put("Voyante", RVoyante.class.getConstructor(LGGame.class));
+			roles.put("Noiseuse", RNoiseuse.class.getConstructor(LGGame.class));
+			roles.put("FrancMacon", RFrancMacon.class.getConstructor(LGGame.class));
+			roles.put("Sbire", RSbire.class.getConstructor(LGGame.class));
+			roles.put("Chasseur", RChasseur.class.getConstructor(LGGame.class));
+			roles.put("Tanneur", RTanneur.class.getConstructor(LGGame.class));
 		} catch (NoSuchMethodException | SecurityException e) {
 			e.printStackTrace();
 		}
