@@ -693,7 +693,7 @@ public class LGGame implements Listener {
         }
         broadcastMessage("§9La phase des votes a commencé.");
         isPeopleVote = true;
-        setVote(new LGVote(20, 20, this, (player, secondsLeft) -> {
+        setVote(new LGVote(180, 180, this, (player, secondsLeft) -> {
             return player.getCache().has("vote") ? "§6Tu votes pour §7§l" + player.getCache().<LGPlayer>get("vote").getName() : "§6Il te reste §e" + secondsLeft + " seconde" + (secondsLeft > 1 ? "s" : "") + "§6 pour voter";
         }));
         getVote().start(getInGame(), () -> {
