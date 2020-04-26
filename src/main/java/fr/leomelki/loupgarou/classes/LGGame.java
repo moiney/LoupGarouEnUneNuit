@@ -19,7 +19,6 @@ import lombok.Setter;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -58,8 +57,6 @@ public class LGGame implements Listener {
     private ArrayList<LGCenterCard> centerCards = new ArrayList<LGCenterCard>();
     @Getter
     private boolean started;
-    @Getter
-    private int night = 0;
     private BukkitTask startingTask;
     @Getter
     @Setter
@@ -431,9 +428,7 @@ public class LGGame implements Listener {
 
     private void nextNight_() {
         if (ended) return;
-        night++;
         broadcastSpacer();
-        broadcastMessage("§9----------- §lNuit n°" + night + "§9 -----------");
         broadcastMessage("§8§oLa nuit tombe sur le village...");
         for (LGPlayer player : getInGame()) {
             player.stopAudio(LGSound.AMBIANT_DAY);
@@ -482,7 +477,7 @@ public class LGGame implements Listener {
                 killed.getPlayer().addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 999999, 1, false, false));
                 killed.die();
 
-                for (LGPlayer lgp : getInGame())
+                for (LGPlayer lgp : getInGame()) {
                     if (lgp == killed) {
                         WrapperPlayServerPlayerInfo info = new WrapperPlayServerPlayerInfo();
                         ArrayList<PlayerInfoData> infos = new ArrayList<PlayerInfoData>();
@@ -490,59 +485,50 @@ public class LGGame implements Listener {
                         infos.add(new PlayerInfoData(new WrappedGameProfile(lgp.getPlayer().getUniqueId(), lgp.getName()), 0, NativeGameMode.ADVENTURE, WrappedChatComponent.fromText(lgp.getName())));
                         info.setData(infos);
                         info.sendPacket(lgp.getPlayer());
-                    } else
-                        lgp.getPlayer().hidePlayer(killed.getPlayer());
-
+                    }
+                }
                 if (vote != null)
                     vote.remove(killed);
-
                 broadcastMessage(killed.getName() + ", il était " + killed.getCurrentRole().getName() + "§4.");
-
                 //Lightning effect
                 killed.getPlayer().getWorld().strikeLightningEffect(killed.getPlayer().getLocation());
-
                 VariousUtils.setWarning(killed.getPlayer(), true);
-
-                killed.getPlayer().getInventory().setHelmet(new ItemStack(Material.CARVED_PUMPKIN));
-
-                LGCustomItems.updateItem(killed);
-
-                //killed.leaveChat();
-                killed.joinChat(spectatorChat);
-                killed.joinChat(dayChat, true);
             }
         });
 
         boolean tanneurHasBeenKilled = killedPlayers.stream().anyMatch(killed -> killed.getRoleWinOnDeath() == RoleWinType.TANNEUR);
+        boolean lgHasBeenKilled = killedPlayers.stream().anyMatch(killed -> killed.getRoleType() == RoleType.LOUP_GAROU);
         boolean villagerHasBeenKilled = killedPlayers.stream().anyMatch(killed -> killed.getRoleWinOnDeath() == RoleWinType.VILLAGE);
         boolean lgInPlayers = getInGame().stream().anyMatch(player -> player.getRoleWinType() == RoleWinType.LOUP_GAROU);
-        LGWinType winType;
-        if (tanneurHasBeenKilled) {
-            winType = LGWinType.TANNEUR;
-        } else if (villagerHasBeenKilled) {
-            winType = LGWinType.LOUPGAROU;
-        } else if (killedPlayers.size() > 0) {
-            winType = LGWinType.VILLAGEOIS;
+        Set<LGWinType> winTypes = new HashSet<>();
+        if (lgHasBeenKilled) {
+            winTypes.add(LGWinType.VILLAGEOIS);
+        } else if (lgInPlayers) {
+            winTypes.add(LGWinType.LOUPGAROU);
+        } else if (!tanneurHasBeenKilled && !villagerHasBeenKilled) {
+            winTypes.add(LGWinType.VILLAGEOIS);
+        } else if (!tanneurHasBeenKilled) {
+            winTypes.add(LGWinType.LOUPGAROU);
         } else {
-            winType = lgInPlayers ? LGWinType.LOUPGAROU : LGWinType.VILLAGEOIS;
+            winTypes.add(LGWinType.TANNEUR);
         }
 
-        endGame(winType);
+        endGame(winTypes);
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onGameEnd(LGGameEndEvent e) {
-        if (e.getGame() == this && e.getWinType() == LGWinType.VILLAGEOIS)
+        if (e.getGame() == this && e.getWinTypes().contains(LGWinType.VILLAGEOIS))
             for (LGPlayer lgp : getInGame())
                 if (lgp.getRoleType() == RoleType.VILLAGER)
                     e.getWinners().add(lgp);
     }
 
-    public void endGame(LGWinType winType) {
+    public void endGame(Set<LGWinType> winTypes) {
         if (ended) return;
 
         ArrayList<LGPlayer> winners = new ArrayList<LGPlayer>();
-        LGGameEndEvent event = new LGGameEndEvent(this, winType, winners);
+        LGGameEndEvent event = new LGGameEndEvent(this, winTypes, winners);
         Bukkit.getPluginManager().callEvent(event);
 
         if (event.isCancelled())
@@ -553,15 +539,13 @@ public class LGGame implements Listener {
         for (Role role : getRoles())
             HandlerList.unregisterAll(role);
 
-        broadcastMessage(winType.getMessage());
+        winTypes.stream().map(LGWinType::getMessage).forEach(this::broadcastMessage);
         broadcastMessage("Les gagnants sont " + event.getWinners().stream().map(LGPlayer::getName).collect(Collectors.joining(", ")));
         for (LGPlayer lgp : getInGame()) {
             lgp.leaveChat();
             lgp.joinChat(spectatorChat);
 
             lgp.setScoreboard(null);
-
-            lgp.sendTitle("§7§lÉgalité", "§8Personne n'a gagné...", 200);
 
             if (winners.contains(lgp))
                 lgp.sendTitle("§a§lVictoire !", "§6Vous avez gagné la partie.", 200);
@@ -602,7 +586,6 @@ public class LGGame implements Listener {
     public void endNight() {
         if (ended) return;
         broadcastSpacer();
-        broadcastMessage("§9----------- §lJour n°" + night + "§9 -----------");
         broadcastMessage("§8§oLe jour se lève sur le village...");
 
         for (LGPlayer p : getInGame()) {
@@ -698,6 +681,9 @@ public class LGGame implements Listener {
         }));
         getVote().start(getInGame(), () -> {
             isPeopleVote = false;
+            if (getInGame().size() == vote.getChoosen().size()) {
+                vote.getChoosen().clear();
+            }
             finishDeaths();
         });
     }

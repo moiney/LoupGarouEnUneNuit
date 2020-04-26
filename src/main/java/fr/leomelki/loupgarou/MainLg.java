@@ -35,10 +35,7 @@ import org.json.simple.parser.ParseException;
 
 import java.io.File;
 import java.lang.reflect.Constructor;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 public class MainLg extends JavaPlugin{
 	private static MainLg instance;
@@ -209,7 +206,7 @@ public class MainLg extends JavaPlugin{
 						return true;
 					}
 					game.cancelWait();
-					game.endGame(LGWinType.VILLAGEOIS);
+					game.endGame(Collections.singleton(LGWinType.VILLAGEOIS));
 					game.broadcastMessage("§cLa partie a été arrêtée de force !");
 					return true;
 				}else if(args[0].equalsIgnoreCase("start")) {

@@ -23,7 +23,7 @@ public class RTanneur extends Role {
 
     @Override
     public String getName() {
-        return "§0§lTanneur";
+        return "§1§lTanneur";
     }
 
     @Override
@@ -33,7 +33,7 @@ public class RTanneur extends Role {
 
     @Override
     public String getShortDescription() {
-        return "Tu gagnes en mourant";
+        return "Tu gagnes en mourant.";
     }
 
     @Override
@@ -63,7 +63,7 @@ public class RTanneur extends Role {
 
     @EventHandler
     public void onGameEnd(LGGameEndEvent e) {
-        if (e.getGame() == getGame() && e.getWinType() == LGWinType.TANNEUR)
+        if (e.getGame() == getGame() && e.getWinTypes().contains(LGWinType.TANNEUR))
             for (LGPlayer lgp : getGame().getInGame())
                 if (lgp.getRoleWinType() == RoleWinType.TANNEUR)//Changed to wintype
                     e.getWinners().add(lgp);

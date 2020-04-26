@@ -135,7 +135,7 @@ public class RLoupGarou extends Role {
 
     @EventHandler
     public void onGameEnd(LGGameEndEvent e) {
-        if (e.getGame() == getGame() && e.getWinType() == LGWinType.LOUPGAROU)
+        if (e.getGame() == getGame() && e.getWinTypes().contains(LGWinType.LOUPGAROU))
             for (LGPlayer lgp : getGame().getInGame())
                 if (lgp.getRoleWinType() == RoleWinType.LOUP_GAROU)//Changed to wintype
                     e.getWinners().add(lgp);

@@ -47,7 +47,7 @@ public class RVoyante extends Role {
 
     @Override
     public String getBroadcastedTask() {
-        return "La voyante peut découvrir le rôle d'un autre joueur ou d'une carte au centre.";
+        return "La " + getName() + "§f peut découvrir le rôle d'un autre joueur ou d'une carte au centre.";
     }
 
     @Override
